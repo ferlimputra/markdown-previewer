@@ -1,0 +1,156 @@
+const PREVIEW_INPUT = "INPUT";
+const defaultMarkdown = 
+  `# Welcome to my React Markdown Previewer!
+
+  ## This is a sub-heading...
+  ### And here's some other cool stuff:
+    
+  Heres some code, \`<div></div>\`, between 2 backticks.
+
+  \`\`\`
+  // this is multi-line code:
+
+  function anotherExample(firstLine, lastLine) {
+    if (firstLine == '\`\`\`' && lastLine == '\`\`\`') {
+      return multiLineCode;
+    }
+  }
+  \`\`\`
+    
+  You can also make text **bold**... whoa!
+  Or _italic_.
+  Or... wait for it... **_both!_**
+  And feel free to go crazy ~~crossing stuff out~~.
+
+  There's also [links](https://www.freecodecamp.com), and
+   > Block Quotes!
+
+  And if you want to get really crazy, even tables:
+
+  Wild Header | Crazy Header | Another Header?
+  ------------ | ------------- | ------------- 
+  Your content can | be here, and it | can be here....
+  And here. | Okay. | I think we get it.
+
+  - And of course there are lists.
+    - Some are bulleted.
+        - With different indentation levels.
+          - That look like this.
+
+
+  1. And there are numbererd lists too.
+  1. Use just 1s if you want! 
+  1. But the list goes on...
+  - Even if you use dashes or asterisks.
+  * And last but not least, let's not forget embedded images:
+
+  ![React Logo w/ Text](https://goo.gl/Umyytc)
+  `;
+const defaultState = {
+  text: defaultMarkdown
+};
+
+const doPreview = (text) => {
+  return {
+    type: PREVIEW_INPUT,
+    text
+  };
+};
+
+const convertToMarkdown = (text) => {
+  let md = marked(text);
+  return {__html : md};
+};
+
+const markdownReducer = (state = defaultState, action) => {
+  switch (action.type) {
+    case PREVIEW_INPUT:
+      return {
+        text: action.text
+      };
+      
+    default:
+      return state;
+  }
+};
+
+const store = Redux.createStore(
+  markdownReducer,
+  Redux.applyMiddleware(ReduxThunk.default)
+);
+
+const Provider = ReactRedux.Provider;
+const connect = ReactRedux.connect;
+
+class AppWrapper extends React.Component {
+  constructor(props) {
+    super(props);
+  }
+  
+  render() {
+    return (
+      <div id="wrapper">
+        <Editor {...this.props}/>
+        <Previewer {...this.props}/>
+      </div>
+    );
+  }
+}
+
+class Editor extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleChange = this.handleChange.bind(this);
+  }
+  
+  handleChange(event) {
+    this.props.handleChange(event.target.value);
+  }
+  
+  render() {
+    return (
+      <textarea 
+        id="editor" 
+        onInput={this.handleChange}
+        value={this.props.text}
+      />
+    );
+  }
+}
+
+class Previewer extends React.Component {
+  constructor(props) {
+    super(props);
+  }
+  
+  render() {
+    return (
+      <div id="preview" dangerouslySetInnerHTML={convertToMarkdown(this.props.text)}>
+      </div>
+    );
+  }
+}
+
+const mapStateToProps = (state) => {
+  return ({...state});
+}
+
+const mapDispatchToProps = (dispatch) => {
+  return {
+    handleChange: (text) => {
+      dispatch(doPreview(text));
+    }
+  };
+}
+
+const Container = connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(AppWrapper);
+
+ReactDOM.render(
+  <Provider store={store}>
+    <Container/>
+  </Provider>,
+  document.getElementById("root")
+);
